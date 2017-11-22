@@ -236,6 +236,7 @@ public class SystemUtils
         PrintWriter pw = null;
         FileWriter fw = null;
         try {
+            logger.info("Trying to write backup status into " + f.getAbsolutePath());
             if ( !f.exists() ) {
                 f.createNewFile();
                 logger.info("File created, absolute path: " + f.getAbsolutePath());

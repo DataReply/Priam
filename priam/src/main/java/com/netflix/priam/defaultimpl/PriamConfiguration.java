@@ -306,16 +306,19 @@ public class PriamConfiguration implements IConfiguration
 		} catch (Exception e) {
 			throw new IllegalStateException("Exception when instantiating the instance data retriever.  Msg: " + e.getLocalizedMessage());
 		}
-		
-	    RAC = instanceDataRetriever.getRac();
-	    PUBLIC_HOSTNAME = instanceDataRetriever.getPublicHostname();
-	    PUBLIC_IP = instanceDataRetriever.getPublicIP();
+		try {
+            RAC = instanceDataRetriever.getRac();
+            PUBLIC_HOSTNAME = instanceDataRetriever.getPublicHostname();
+            PUBLIC_IP = instanceDataRetriever.getPublicIP();
 
-	    INSTANCE_ID = instanceDataRetriever.getInstanceId();
-	    INSTANCE_TYPE = instanceDataRetriever.getInstanceType();
+            INSTANCE_ID = instanceDataRetriever.getInstanceId();
+            INSTANCE_TYPE = instanceDataRetriever.getInstanceType();
 
-		NETWORK_MAC =  instanceDataRetriever.getMac();
-		NETWORK_VPC = instanceDataRetriever.getVpcId();
+            NETWORK_MAC = instanceDataRetriever.getMac();
+            NETWORK_VPC = instanceDataRetriever.getVpcId();
+        }catch(RuntimeException ex) {
+            System.out.println("exception happened but hey...." +ex.getMessage());
+        }
 
         setupEnvVars();
         this.config.intialize(ASG_NAME, REGION);
@@ -395,7 +398,7 @@ public class PriamConfiguration implements IConfiguration
                 {
                     for (com.amazonaws.services.ec2.model.Tag tag : ins.getTags())
                     {
-                        if (tag.getKey().equals("aws:autoscaling:groupName"))
+                        if (tag.getKey().equals("cassandra.groupName"))
                             return tag.getValue();
                     }
                 }

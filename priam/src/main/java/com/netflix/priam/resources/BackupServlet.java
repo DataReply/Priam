@@ -116,6 +116,9 @@ public class BackupServlet {
     @GET
     @Path("/do_snapshot")
     public Response backup() throws Exception {
+        logger.info("Running cassandraMonitor task");
+        scheduler.runTaskNow(CassandraMonitor.class);
+        logger.info("Done Running cassandraMonitor task");
         snapshotBackup.execute();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }

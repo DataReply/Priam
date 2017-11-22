@@ -35,12 +35,12 @@ public class AWSVpcInstanceDataRetriever  extends InstanceDataRetrieverBase impl
 
    public String getPublicHostname()
    {
-       return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname");
+       return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/hostname");
    }
 
    public String getPublicIP()
    {
-       return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4");
+       return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4");
    }
 
    public String getInstanceId()

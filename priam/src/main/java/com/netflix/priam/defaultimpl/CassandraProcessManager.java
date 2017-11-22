@@ -148,6 +148,7 @@ public class CassandraProcessManager implements ICassandraProcess
             command.add(SUDO_STRING);
             command.add("-n");
             command.add("-E");
+            //sudo -n -E /etc/init.d/cassandra stop
         }
         for(String param : config.getCassStopScript().split(" ")){
             if( StringUtils.isNotBlank(param))

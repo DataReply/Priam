@@ -23,7 +23,8 @@ import java.util.List;
 import java.util.Set;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
+import com.amazonaws.services.simpledb.AmazonSimpleDB;
+import com.amazonaws.services.simpledb.AmazonSimpleDBClientBuilder;
 import com.amazonaws.services.simpledb.model.Attribute;
 import com.amazonaws.services.simpledb.model.DeleteAttributesRequest;
 import com.amazonaws.services.simpledb.model.Item;
@@ -76,7 +77,7 @@ public class SDBInstanceData
      */
     public PriamInstance getInstance(String app, String dc, int id)
     {
-        AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
+        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         SelectRequest request = new SelectRequest(String.format(INSTANCE_QUERY, app, dc, id));
         SelectResult result = simpleDBClient.select(request);
         if (result.getItems().size() == 0)
@@ -92,7 +93,7 @@ public class SDBInstanceData
      */
     public Set<PriamInstance> getAllIds(String app)
     {
-        AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
+        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         Set<PriamInstance> inslist = new HashSet<PriamInstance>();
         String nextToken = null;
         do
@@ -119,7 +120,7 @@ public class SDBInstanceData
      */
     public void createInstance(PriamInstance instance) throws AmazonServiceException
     {
-        AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
+        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         PutAttributesRequest putReq = new PutAttributesRequest(DOMAIN, getKey(instance), createAttributesToRegister(instance));
         simpleDBClient.putAttributes(putReq);
     }
@@ -132,7 +133,7 @@ public class SDBInstanceData
      */
     public void registerInstance(PriamInstance instance) throws AmazonServiceException
     {
-        AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
+        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         PutAttributesRequest putReq = new PutAttributesRequest(DOMAIN, getKey(instance), createAttributesToRegister(instance));
         UpdateCondition expected = new UpdateCondition();
         expected.setName(Attributes.INSTANCE_ID);
@@ -149,7 +150,7 @@ public class SDBInstanceData
      */
     public void deregisterInstance(PriamInstance instance) throws AmazonServiceException
     {
-        AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
+        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         DeleteAttributesRequest delReq = new DeleteAttributesRequest(DOMAIN, getKey(instance), createAttributesToDeRegister(instance));
         simpleDBClient.deleteAttributes(delReq);
     }
@@ -225,8 +226,8 @@ public class SDBInstanceData
         return instance.getApp() + "_" + instance.getDC() + "_" + instance.getId();
     }
     
-    private AmazonSimpleDBClient getSimpleDBClient(){
+    private AmazonSimpleDB getSimpleDBClient(){
         //Create per request
-        return new AmazonSimpleDBClient(provider.getAwsCredentialProvider());
+        return AmazonSimpleDBClientBuilder.standard().withRegion("eu-west-1").build();
     }
 }

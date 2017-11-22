@@ -49,6 +49,7 @@ public class CassandraMonitor extends Task{
 
         try
         {
+            logger.info("Executing CassandraMonitor Task...");
         		//This returns pid for the Cassandra process
         		Process p = Runtime.getRuntime().exec("pgrep -f " + config.getCassProcessName());
         		BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));

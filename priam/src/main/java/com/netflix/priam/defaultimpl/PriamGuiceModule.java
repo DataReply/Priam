@@ -15,6 +15,7 @@
  */
 package com.netflix.priam.defaultimpl;
 
+import com.netflix.priam.aws.IAMCredential;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.merics.BackupMetricsMgr;
 import com.netflix.priam.merics.IMetricPublisher;
@@ -76,7 +77,7 @@ public class PriamGuiceModule extends AbstractModule
         bind(ICredentialGeneric.class).annotatedWith(Names.named("gcscredential")).to(GcsCredential.class);
         bind(ICredentialGeneric.class).annotatedWith(Names.named("pgpcredential")).to(PgpCredential.class);
         bind(IRestoreStrategy.class).annotatedWith(Names.named("encryptedrestore")).to(EncryptedRestoreStrategy.class);
-        bind(ICredential.class).to(ClearCredential.class);
+        bind(ICredential.class).to(IAMCredential.class);
         bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
         bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
         bind(INewTokenRetriever.class).to(NewTokenRetriever.class);
