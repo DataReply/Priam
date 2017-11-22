@@ -16,7 +16,7 @@
 package com.netflix.priam;
 
 import com.amazonaws.services.simpledb.AmazonSimpleDB;
-import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
+import com.amazonaws.services.simpledb.AmazonSimpleDBClientBuilder;
 import com.amazonaws.services.simpledb.model.Attribute;
 import com.amazonaws.services.simpledb.model.Item;
 import com.amazonaws.services.simpledb.model.SelectRequest;
@@ -63,12 +63,14 @@ public final class SimpleDBConfigSource extends AbstractConfigSource {
         super.intialize(asgName, region);
 
         // End point is us-east-1
-        AmazonSimpleDB simpleDBClient = AmazonSimpleDBClient.builder().withCredentials(provider.getAwsCredentialProvider()).build();
+        AmazonSimpleDB simpleDBClient = AmazonSimpleDBClientBuilder.standard().withRegion("eu-west-1").build();
 
         String nextToken = null;
         String appid = asgName.lastIndexOf('-') > 0 ? asgName.substring(0, asgName.indexOf('-')) : asgName;
-        logger.info("appid used to fetch properties is: {}", appid);
-        do {
+        logger.info(String.format("appid used to fetch properties is: %s", appid));
+        do 
+        {
+            System.out.println("Fetching from SDB....");
             SelectRequest request = new SelectRequest(String.format(ALL_QUERY, appid));
             request.setNextToken(nextToken);
             SelectResult result = simpleDBClient.select(request);

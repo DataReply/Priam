@@ -16,6 +16,19 @@
  */
 package com.netflix.priam.defaultimpl;
 
+
+import com.netflix.priam.aws.IAMCredential;
+import com.netflix.priam.backup.*;
+import com.netflix.priam.merics.BackupMetricsMgr;
+import com.netflix.priam.merics.IMetricPublisher;
+import com.netflix.priam.merics.NoOpMetricPublisher;
+import com.netflix.priam.notification.BackupNotificationMgr;
+import com.netflix.priam.notification.INotificationService;
+import com.netflix.priam.restore.*;
+
+import org.quartz.SchedulerFactory;
+import org.quartz.impl.StdSchedulerFactory;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import com.netflix.priam.ICredential;
@@ -63,7 +76,9 @@ public class PriamGuiceModule extends AbstractModule {
         bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
         bind(ICredentialGeneric.class).annotatedWith(Names.named("gcscredential")).to(GcsCredential.class);
         bind(ICredentialGeneric.class).annotatedWith(Names.named("pgpcredential")).to(PgpCredential.class);
-        bind(ICredential.class).to(ClearCredential.class);
+
+        bind(IRestoreStrategy.class).annotatedWith(Names.named("encryptedrestore")).to(EncryptedRestoreStrategy.class);
+        bind(ICredential.class).to(IAMCredential.class);
         bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
         bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
         bind(INewTokenRetriever.class).to(NewTokenRetriever.class);

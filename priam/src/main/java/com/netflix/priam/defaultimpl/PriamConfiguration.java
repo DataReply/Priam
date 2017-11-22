@@ -190,6 +190,11 @@ public class PriamConfiguration implements IConfiguration {
 
     //== vpc specific   
     private String NETWORK_VPC;  //Fetch the vpc id of running instance
+    private String PUBLIC_HOSTNAME;  //Fetch the vpc id of running instance
+    private String PUBLIC_IP;  //Fetch the vpc id of running instance
+    private String INSTANCE_ID;  //Fetch the vpc id of running instance
+    private String INSTANCE_TYPE;  //Fetch the vpc id of running instance
+    private String NETWORK_MAC;  //Fetch the vpc id of running instance
 
     // Defaults 
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
@@ -263,24 +268,27 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public void intialize() {
-        try {
-            if (this.insEnvIdentity.isClassic()) {
-                this.instanceDataRetriever =  (InstanceDataRetriever) Class.forName("com.netflix.priam.identity.config.AwsClassicInstanceDataRetriever").newInstance();
+    public void intialize()
+    {
+    	InstanceDataRetriever instanceDataRetriever;
+		try {
+			instanceDataRetriever = getInstanceDataRetriever();
+		} catch (Exception e) {
+			throw new IllegalStateException("Exception when instantiating the instance data retriever.  Msg: " + e.getLocalizedMessage());
+		}
+		try {
+            RAC = instanceDataRetriever.getRac();
+            PUBLIC_HOSTNAME = instanceDataRetriever.getPublicHostname();
+            PUBLIC_IP = instanceDataRetriever.getPublicIP();
 
-            } else if (this.insEnvIdentity.isNonDefaultVpc()) {
-                this.instanceDataRetriever =  (InstanceDataRetriever) Class.forName("com.netflix.priam.identity.config.AWSVpcInstanceDataRetriever").newInstance();
-            } else {
-                throw new IllegalStateException("Unable to determine environemt (vpc, classic) for running instance.");
-            }
-        } catch (Exception e) {
-            throw new IllegalStateException("Exception when instantiating the instance data retriever.  Msg: " + e.getLocalizedMessage());
+            INSTANCE_ID = instanceDataRetriever.getInstanceId();
+            INSTANCE_TYPE = instanceDataRetriever.getInstanceType();
+
+            NETWORK_MAC = instanceDataRetriever.getMac();
+            NETWORK_VPC = instanceDataRetriever.getVpcId();
+        }catch(RuntimeException ex) {
+            System.out.println("exception happened but hey...." +ex.getMessage());
         }
-
-        RAC = instanceDataRetriever.getRac();
-
-        NETWORK_VPC = instanceDataRetriever.getVpcId();
-
         setupEnvVars();
         this.config.intialize(ASG_NAME, REGION);
         setDefaultRACList(REGION);
@@ -343,11 +351,14 @@ public class PriamConfiguration implements IConfiguration {
         public String retriableCall() throws IllegalStateException {
             DescribeInstancesRequest desc = new DescribeInstancesRequest().withInstanceIds(instanceId);
             DescribeInstancesResult res = client.describeInstances(desc);
-
-            for (Reservation resr : res.getReservations()) {
-                for (Instance ins : resr.getInstances()) {
-                    for (com.amazonaws.services.ec2.model.Tag tag : ins.getTags()) {
-                        if (tag.getKey().equals("aws:autoscaling:groupName"))
+    
+            for (Reservation resr : res.getReservations())
+            {
+                for (Instance ins : resr.getInstances())
+                {
+                    for (com.amazonaws.services.ec2.model.Tag tag : ins.getTags())
+                    {
+                        if (tag.getKey().equals("cassandra.groupName"))
                             return tag.getValue();
                     }
                 }

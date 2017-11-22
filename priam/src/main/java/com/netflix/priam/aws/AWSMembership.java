@@ -22,6 +22,7 @@ import com.amazonaws.services.autoscaling.model.*;
 import com.amazonaws.services.autoscaling.model.Instance;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.services.ec2.model.Filter;
 import com.google.common.collect.Lists;
@@ -35,10 +36,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+
+import java.util.*;
 
 /**
  * Class to query amazon ASG for its members to provide - Number of valid nodes
@@ -59,54 +58,59 @@ public class AWSMembership implements IMembership {
         this.crossAccountProvider = crossAccountProvider;
     }
 
-    @Override
-    public List<String> getRacMembership() {
-        AmazonAutoScaling client = null;
-        try {
-            List<String> asgNames = new ArrayList<>();
-            asgNames.add(config.getASGName());
-            asgNames.addAll(Arrays.asList(config.getSiblingASGNames().split("\\s*,\\s*")));
-            client = getAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(asgNames.toArray(new String[asgNames.size()]));
-            DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
 
-            List<String> instanceIds = Lists.newArrayList();
-            for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
-                for (Instance ins : asg.getInstances())
-                    if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating") || ins.getLifecycleState().equalsIgnoreCase("shutting-down") || ins.getLifecycleState()
-                            .equalsIgnoreCase("Terminated")))
-                        instanceIds.add(ins.getInstanceId());
+    private List<String> instancesHavingTag(String tagName) {
+        List<String> instanceIds = new LinkedList<>();
+        Filter tagFilter = new Filter().withName("tag:cassandra.groupName").withValues(tagName);
+        Filter instanceStateFilter = new Filter().withName("instance-state-name").withValues(
+                InstanceStateName.Running.toString(),
+                InstanceStateName.Pending.toString(),
+                InstanceStateName.ShuttingDown.toString(),
+                InstanceStateName.Stopping.toString(),
+                InstanceStateName.Stopped.toString()
+        );
+        DescribeInstancesRequest request = new DescribeInstancesRequest().withFilters(tagFilter, instanceStateFilter);
+        AmazonEC2 client = null;
+        try {
+            client = getEc2Client();
+            final DescribeInstancesResult describeInstancesResult = client.describeInstances(request);
+            final List<Reservation> reservations = describeInstancesResult.getReservations();
+            if(reservations.size() < 1) {
+                throw new UnsupportedOperationException("Could not find any instances having tagName " + tagName +
+                        " done request: " + request.toString() + " usign client " + client.toString());
             }
-            if (logger.isInfoEnabled()) {
-                logger.info(String.format("Querying Amazon returned following instance in the RAC: %s, ASGs: %s --> %s", config.getRac(), StringUtils.join(asgNames, ","), StringUtils.join(instanceIds, ",")));
+            final Reservation reservation = reservations.get(0);
+            final List<com.amazonaws.services.ec2.model.Instance> instances = reservation.getInstances();
+            for (com.amazonaws.services.ec2.model.Instance instance : instances) {
+                instanceIds.add(instance.getInstanceId());
             }
-            return instanceIds;
         } finally {
             if (client != null)
                 client.shutdown();
         }
+        return instanceIds;
+    }
+
+    @Override
+    public List<String> getRacMembership()
+    {
+        String asgName = config.getASGName();
+
+        List<String> instanceIds = instancesHavingTag(asgName);
+        logger.info(String.format("Querying Amazon returned following instance in the RAC: %s, ASGs: %s --> %s", config.getRac(), asgName, StringUtils.join(instanceIds, ",")));
+        return instanceIds;
     }
 
     /**
      * Actual membership AWS source of truth...
      */
     @Override
-    public int getRacMembershipSize() {
-        AmazonAutoScaling client = null;
-        try {
-            client = getAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
-            DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
-            int size = 0;
-            for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
-                size += asg.getMaxSize();
-            }
-            logger.info("Query on ASG returning {} instances", size);
-            return size;
-        } finally {
-            if (client != null)
-                client.shutdown();
-        }
+
+    public int getRacMembershipSize()
+    {
+        int size = getRacMembership().size();
+        logger.info(String.format("Query on ASG returning %d instances", size));
+        return size;
     }
 
     @Override

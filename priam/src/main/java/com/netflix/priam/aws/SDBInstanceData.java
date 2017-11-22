@@ -18,8 +18,15 @@ package com.netflix.priam.aws;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.simpledb.AmazonSimpleDB;
-import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
-import com.amazonaws.services.simpledb.model.*;
+import com.amazonaws.services.simpledb.AmazonSimpleDBClientBuilder;
+import com.amazonaws.services.simpledb.model.Attribute;
+import com.amazonaws.services.simpledb.model.DeleteAttributesRequest;
+import com.amazonaws.services.simpledb.model.Item;
+import com.amazonaws.services.simpledb.model.PutAttributesRequest;
+import com.amazonaws.services.simpledb.model.ReplaceableAttribute;
+import com.amazonaws.services.simpledb.model.SelectRequest;
+import com.amazonaws.services.simpledb.model.SelectResult;
+import com.amazonaws.services.simpledb.model.UpdateCondition;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
@@ -105,7 +112,7 @@ public class SDBInstanceData {
      * @throws AmazonServiceException
      */
     public void createInstance(PriamInstance instance) throws AmazonServiceException {
-        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
+       AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         PutAttributesRequest putReq = new PutAttributesRequest(DOMAIN, getKey(instance), createAttributesToRegister(instance));
         simpleDBClient.putAttributes(putReq);
     }
@@ -117,7 +124,7 @@ public class SDBInstanceData {
      * @throws AmazonServiceException
      */
     public void registerInstance(PriamInstance instance) throws AmazonServiceException {
-        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
+       AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         PutAttributesRequest putReq = new PutAttributesRequest(DOMAIN, getKey(instance), createAttributesToRegister(instance));
         UpdateCondition expected = new UpdateCondition();
         expected.setName(Attributes.INSTANCE_ID);
@@ -204,8 +211,8 @@ public class SDBInstanceData {
         return instance.getApp() + "_" + instance.getDC() + "_" + instance.getId();
     }
 
-    private AmazonSimpleDB getSimpleDBClient() {
+    private AmazonSimpleDB getSimpleDBClient(){
         //Create per request
-        return AmazonSimpleDBClient.builder().withCredentials(provider.getAwsCredentialProvider()).withRegion(configuration.getSDBInstanceIdentityRegion()).build();
+        return AmazonSimpleDBClientBuilder.standard().withRegion("eu-west-1").build();
     }
 }

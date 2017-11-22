@@ -127,6 +127,7 @@ public class PriamServer {
          *  If Restore option is chosen, then Running Cassandra instance is stopped 
          *  Hence waiting for Cassandra to stop
          */
+        logger.info("Adding task CassandraMonitor");
         scheduler.addTaskWithDelay(CassandraMonitor.JOBNAME, CassandraMonitor.class, CassandraMonitor.getTimer(), CASSANDRA_MONITORING_INITIAL_DELAY);
 
 

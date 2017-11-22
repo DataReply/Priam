@@ -61,7 +61,21 @@ public class CassandraMonitor extends Task {
             instanceState.setIsRequiredDirectoriesExist(true);
         }catch (IllegalStateException e)
         {
-            instanceState.setIsRequiredDirectoriesExist(false);
+            logger.info("Executing CassandraMonitor Task...");
+        		//This returns pid for the Cassandra process
+        		Process p = Runtime.getRuntime().exec("pgrep -f " + config.getCassProcessName());
+        		BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line = input.readLine();
+        		if (line != null&& !isCassadraStarted())
+        		{
+        			//Setting cassandra flag to true
+        			isCassandraStarted.set(true);
+        		}
+        		else if(line  == null&& isCassadraStarted())
+        		{
+        			//Setting cassandra flag to false
+        			isCassandraStarted.set(false);
+        		}
         }
 
         Process process = null;

@@ -138,14 +138,12 @@ public class CassandraProcessManager implements ICassandraProcess {
     public void stop(boolean force) throws IOException {
         logger.info("Stopping cassandra server ....");
         List<String> command = Lists.newArrayList();
-        if(config.useSudo()) {
-            logger.info("Configured to use sudo to stop C*");
-
-            if (!"root".equals(System.getProperty("user.name"))) {
-                command.add(SUDO_STRING);
-                command.add("-n");
-                command.add("-E");
-            }
+        if (!"root".equals(System.getProperty("user.name")))
+        {
+            command.add(SUDO_STRING);
+            command.add("-n");
+            command.add("-E");
+            //sudo -n -E /etc/init.d/cassandra stop
         }
         for (String param : config.getCassStopScript().split(" ")) {
             if (StringUtils.isNotBlank(param))
